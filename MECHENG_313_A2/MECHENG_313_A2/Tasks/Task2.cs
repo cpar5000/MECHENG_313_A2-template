@@ -97,14 +97,16 @@ namespace MECHENG_313_A2.Tasks
         public void Start()
         {
             //Setting the initial Green state
-            state = "Green";
+            state = "Red";
             FSM.SetCurrentState(state);
-            FSM.SetNextState(state, "Yellow", "a");
-            FSM.AddAction(state, "a", MethodA);
-            FSM.AddAction(state, "a", MethodB);
-            FSM.AddAction(state,"a", MethodC);
+
 
             //Setting all other states
+            FSM.SetNextState("Green", "Yellow", "a");
+            FSM.AddAction("Green", "a", MethodA);
+            FSM.AddAction("Green", "a", MethodB);
+            FSM.AddAction("Green", "a", MethodC);
+
             FSM.SetNextState("Yellow", "Red", "a");
             FSM.AddAction("Yellow", "a", MethodA);
             FSM.AddAction("Yellow", "a", MethodB);
@@ -120,25 +122,28 @@ namespace MECHENG_313_A2.Tasks
             FSM.AddAction("Red", "b", MethodB);
             FSM.AddAction("Red", "b", MethodC);
 
-            FSM.SetNextState("Yellow", "Red", "b");
-            FSM.AddAction("Yellow", "b", MethodA);
-            FSM.AddAction("Yellow", "b", MethodB);
-            FSM.AddAction("Yellow", "b", MethodC);
+            FSM.SetNextState("Yellow'", "Red", "b");
+            FSM.AddAction("Yellow'", "b", MethodA);
+            FSM.AddAction("Yellow'", "b", MethodB);
+            FSM.AddAction("Yellow'", "b", MethodC);
 
             FSM.SetNextState("None", "Red", "b");
             FSM.AddAction("None", "b", MethodA);
             FSM.AddAction("None", "b", MethodB);
             FSM.AddAction("None","b", MethodC);
 
-            FSM.SetNextState("Yellow", "None", "a");
-            FSM.AddAction("Yellow", "a", MethodA);
-            FSM.AddAction("Yellow", "a", MethodB);
-            FSM.AddAction("Yellow", "a", MethodC);
+            FSM.SetNextState("Yellow'", "None", "a");
+            FSM.AddAction("Yellow'", "a", MethodA);
+            FSM.AddAction("Yellow'", "a", MethodB);
+            FSM.AddAction("Yellow'", "a", MethodC);
 
-            FSM.SetNextState("None", "Yellow", "a");
+            FSM.SetNextState("None", "Yellow'", "a");
             FSM.AddAction("None", "a", MethodA);
             FSM.AddAction("None", "a", MethodB);
             FSM.AddAction("None", "a", MethodC);
+
+            //Setup
+            FSM.ProcessEvent("a");
         }
 
         public void Tick()
@@ -150,6 +155,10 @@ namespace MECHENG_313_A2.Tasks
         public void MethodA(DateTime timestamp, string eventTrigger)
         {
             string temp = FSM.GetCurrentState();
+            if (temp == "Yellow'")
+            {
+                temp = "Yellow";
+            }
             if (Enum.TryParse<TrafficLightState>(temp, out displayState))
             {
                 _taskPage.SetTrafficLightState((TrafficLightState)Enum.Parse(typeof(TrafficLightState), temp, true));
@@ -164,8 +173,12 @@ namespace MECHENG_313_A2.Tasks
 
         public void MethodC(DateTime timestamp, string eventTrigger)
         {
-         
-            _taskPage.SerialPrint(DateTime.Now, FSM.GetCurrentState());
+            string temp = FSM.GetCurrentState();
+            if (temp == "Yellow'")
+            {
+                temp = "Yellow";
+            }
+            _taskPage.SerialPrint(DateTime.Now, temp);
         }
     }
 }
