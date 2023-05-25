@@ -178,6 +178,8 @@ namespace MECHENG_313_A2.Tasks
             {
                 temp = "Yellow";
             }
+
+            temp = temp + "\n";
             _taskPage.SerialPrint(DateTime.Now, temp);
         }
     }
