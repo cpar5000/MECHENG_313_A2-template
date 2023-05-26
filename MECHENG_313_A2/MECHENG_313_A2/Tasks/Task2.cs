@@ -21,15 +21,27 @@ namespace MECHENG_313_A2.Tasks
         protected static string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "log.txt");
         protected Boolean configMode = false;
 
+        protected static int DEFAULT_GREEN_LIGHT_LENGTH = 1000;
+        protected static int DEFAULT_YELLOW_LIGHT_LENGTH = 1000;
+        protected static int DEFAULT_RED_LIGHT_LENGTH = 1000;
+        protected static int DEFAULT_CONFIG_LIGHT_LENGTH = 1000;
+        protected int redLength = DEFAULT_RED_LIGHT_LENGTH;
+        protected int greenLength = DEFAULT_GREEN_LIGHT_LENGTH;
+        protected int yellowLength = DEFAULT_YELLOW_LIGHT_LENGTH;
+        protected int noneLength = DEFAULT_CONFIG_LIGHT_LENGTH;
+
 
         protected ITaskPage _taskPage;
 
         public void ConfigLightLength(int redLength, int greenLength)
         {
-            // TODO: Implement this
+
+            this.redLength = redLength;
+            this.greenLength = greenLength;
+
         }
 
-        public async Task<bool> EnterConfigMode()
+        public virtual async Task<bool> EnterConfigMode()
         {
             //Can only enter config mode is the current state is Red
             if (String.Equals(FSM.GetCurrentState(), "Red"))
@@ -97,7 +109,7 @@ namespace MECHENG_313_A2.Tasks
 
        
 
-        public void Start()
+        public virtual void Start()
         {
             //Setting the initial Green state
             state = "Red";
@@ -149,7 +161,7 @@ namespace MECHENG_313_A2.Tasks
             FSM.ProcessEvent("a");
         }
 
-        public void Tick()
+        public virtual void Tick()
         {
             state = FSM.ProcessEvent("a");
 
