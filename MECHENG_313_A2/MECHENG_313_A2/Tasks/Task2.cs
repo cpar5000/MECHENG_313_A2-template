@@ -17,6 +17,8 @@ namespace MECHENG_313_A2.Tasks
         private MockSerialInterface serialInterface = new MockSerialInterface();
         TrafficLightState displayState = new TrafficLightState();
         public virtual TaskNumber TaskNumber => TaskNumber.Task2;
+        private static string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "log.txt");
+
 
         protected ITaskPage _taskPage;
 
@@ -51,11 +53,9 @@ namespace MECHENG_313_A2.Tasks
 
         public async Task<string> OpenLogFile()
         {
-            string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "log.txt");
             if (!File.Exists(filePath))
             {
                 File.Create(filePath);
-
             }
             else
             {
@@ -63,8 +63,7 @@ namespace MECHENG_313_A2.Tasks
                 _taskPage.SetLogEntries(lines);
             }
 
-            
-            
+
 
             // Help notes: to read a file named "log.txt" under the LocalApplicationData directory,
             // you may use the following code snippet:
@@ -167,7 +166,13 @@ namespace MECHENG_313_A2.Tasks
 
         public void MethodB(DateTime timestamp, string eventTrigger)
         {
-            string logEntry = DateTime.Now + eventTrigger + "\n";
+            string logEntry = DateTime.Now + "   Event Triggered: " + eventTrigger + "\n";
+
+            using (StreamWriter logStream = File.AppendText(filePath))
+            {
+                logStream.WriteLine(logEntry);
+            }
+
             _taskPage.AddLogEntry(logEntry);
         }
 
