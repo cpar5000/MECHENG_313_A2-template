@@ -52,9 +52,12 @@ namespace MECHENG_313_A2.Tasks
                 Info info = fst[currentState][eventTrigger];
                 SetCurrentState(info.nextState);
 
-                var T1 = Task.Run(() =>  info.actions[0](DateTime.Now, eventTrigger));
-                var T2 = Task.Run(() => info.actions[1](DateTime.Now, eventTrigger));
-                var T3 = Task.Run(() => info.actions[2](DateTime.Now, eventTrigger));
+                foreach (TimestampedAction i_action in info.actions)
+                {
+                    
+                    Thread th = new Thread(Thread => { i_action(DateTime.Now, eventTrigger); });
+                    th.Start();
+                }
 
                 SetCurrentState(info.nextState);
                 return info.nextState;
@@ -87,6 +90,11 @@ namespace MECHENG_313_A2.Tasks
             
 
         }
+
+       /* public string GetNextState()
+        {
+            return fst[current]
+        }*/
 
     }
 }

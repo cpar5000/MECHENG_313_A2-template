@@ -5,19 +5,21 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Xamarin.Forms;
 
 namespace MECHENG_313_A2.Tasks
 {
     internal class Task2 : IController
     {
 
-        private string state = null;
+        protected string state = null;
         private string tempState = null;
-        private FiniteStateMachine FSM = new FiniteStateMachine();
-        private MockSerialInterface serialInterface = new MockSerialInterface();
+        protected FiniteStateMachine FSM = new FiniteStateMachine();
+        protected MockSerialInterface serialInterface = new MockSerialInterface();
         TrafficLightState displayState = new TrafficLightState();
         public virtual TaskNumber TaskNumber => TaskNumber.Task2;
-        private static string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "log.txt");
+        protected static string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "log.txt");
+        protected Boolean configMode = false;
 
 
         protected ITaskPage _taskPage;
@@ -34,6 +36,7 @@ namespace MECHENG_313_A2.Tasks
             {
                 //Using ProcessEvent method to enter config mode. use of state variable is only since Process Event returns current state
                 state = FSM.ProcessEvent("b");
+
                 return true;
             }
             return false;
@@ -43,6 +46,7 @@ namespace MECHENG_313_A2.Tasks
         {
             //Using ProcessEvent method to exit config mode. use of state variable is only since Process Event returns current state
             state = FSM.ProcessEvent("b");
+
         }
 
         public async Task<string[]> GetPortNames()
@@ -166,7 +170,18 @@ namespace MECHENG_313_A2.Tasks
 
         public void MethodB(DateTime timestamp, string eventTrigger)
         {
-            string logEntry = DateTime.Now + "   Event Triggered: " + eventTrigger + "\n";
+            string eventTriggered;
+            if (eventTrigger == "a")
+            {
+                eventTriggered = "Tick";
+            } else if (configMode == false)
+            {
+                eventTriggered = "Entered Config Mode";
+            } else
+            {
+                eventTriggered = "Exited Config Mode";
+            }
+            string logEntry = DateTime.Now + "   Event Triggered: " + eventTriggered + "\n" + DateTime.Now + "   Entered State: " + FSM.GetCurrentState() + "\n";
 
             using (StreamWriter logStream = File.AppendText(filePath))
             {
