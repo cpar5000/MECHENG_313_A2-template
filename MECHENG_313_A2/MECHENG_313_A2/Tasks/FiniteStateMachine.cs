@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
+
 
 namespace MECHENG_313_A2.Tasks
 {
@@ -43,16 +45,18 @@ namespace MECHENG_313_A2.Tasks
 
             //DateTime time = DateTime.Now;
 
+
             if (fst.ContainsKey(currentState) && fst[currentState].ContainsKey(eventTrigger))
             {
                 TimestampedAction temp;
                 Info info = fst[currentState][eventTrigger];
                 SetCurrentState(info.nextState);
 
-                for (var i = 0; i < info.actions.Count; i++)
+                foreach (TimestampedAction i_action in info.actions)
                 {
-                    temp = info.actions[i];
-                    temp(DateTime.Now, eventTrigger);
+                    
+                    Thread th = new Thread(Thread => { i_action(DateTime.Now, eventTrigger); });
+                    th.Start();
                 }
 
                 SetCurrentState(info.nextState);
@@ -86,6 +90,11 @@ namespace MECHENG_313_A2.Tasks
             
 
         }
+
+       /* public string GetNextState()
+        {
+            return fst[current]
+        }*/
 
     }
 }
