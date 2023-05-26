@@ -5,43 +5,58 @@ using System.IO;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Xamarin.Forms;
 
 namespace MECHENG_313_A2.Tasks
 {
     internal class Task2 : IController
     {
 
-        private string state = null;
+        protected string state = null;
         private string tempState = null;
-        private FiniteStateMachine FSM = new FiniteStateMachine();
-        private MockSerialInterface serialInterface = new MockSerialInterface();
+        protected FiniteStateMachine FSM = new FiniteStateMachine();
+        protected MockSerialInterface serialInterface = new MockSerialInterface();
         TrafficLightState displayState = new TrafficLightState();
         public virtual TaskNumber TaskNumber => TaskNumber.Task2;
-        private static string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "log.txt");
+        protected static string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "log.txt");
+        protected Boolean configMode = false;
+
+        protected static int DEFAULT_GREEN_LIGHT_LENGTH = 1000;
+        protected static int DEFAULT_YELLOW_LIGHT_LENGTH = 1000;
+        protected static int DEFAULT_RED_LIGHT_LENGTH = 1000;
+        protected static int DEFAULT_CONFIG_LIGHT_LENGTH = 1000;
+        protected int redLength = DEFAULT_RED_LIGHT_LENGTH;
+        protected int greenLength = DEFAULT_GREEN_LIGHT_LENGTH;
+        protected int yellowLength = DEFAULT_YELLOW_LIGHT_LENGTH;
+        protected int configLength = DEFAULT_CONFIG_LIGHT_LENGTH;
+
 
         protected ITaskPage _taskPage;
 
-        public void ConfigLightLength(int redLength, int greenLength)
+        virtual public void ConfigLightLength(int redLength, int greenLength)
         {
-            // TODO: Implement this
+
+
         }
 
-        public async Task<bool> EnterConfigMode()
+        public virtual async Task<bool> EnterConfigMode()
         {
             //Can only enter config mode is the current state is Red
             if (String.Equals(FSM.GetCurrentState(), "Red"))
             {
                 //Using ProcessEvent method to enter config mode. use of state variable is only since Process Event returns current state
                 state = FSM.ProcessEvent("b");
+
                 return true;
             }
             return false;
         }
 
-        public void ExitConfigMode()
+        virtual public void ExitConfigMode()
         {
             //Using ProcessEvent method to exit config mode. use of state variable is only since Process Event returns current state
             state = FSM.ProcessEvent("b");
+
         }
 
         public async Task<string[]> GetPortNames()
@@ -62,8 +77,7 @@ namespace MECHENG_313_A2.Tasks
                 _taskPage.SetLogEntries(lines);
             }
 
-            
-            
+
 
             // Help notes: to read a file named "log.txt" under the LocalApplicationData directory,
             // you may use the following code snippet:
@@ -93,7 +107,7 @@ namespace MECHENG_313_A2.Tasks
 
        
 
-        public void Start()
+        public virtual void Start()
         {
             //Setting the initial Green state
             state = "Red";
@@ -145,7 +159,7 @@ namespace MECHENG_313_A2.Tasks
             FSM.ProcessEvent("a");
         }
 
-        public void Tick()
+        public virtual void Tick()
         {
             state = FSM.ProcessEvent("a");
 
@@ -166,13 +180,24 @@ namespace MECHENG_313_A2.Tasks
 
         public void MethodB(DateTime timestamp, string eventTrigger)
         {
-            string logEntry = DateTime.Now + "   Event Triggered: " + eventTrigger + "\n";
+            string eventTriggered;
+            if (eventTrigger == "a")
+            {
+                eventTriggered = "Tick";
+            } else if (configMode == false)
+            {
+                eventTriggered = "Entered Config Mode";
+            } else
+            {
+                eventTriggered = "Exited Config Mode";
+            }
+            string logEntry = DateTime.Now + "   Event Triggered: " + eventTriggered + "\n" + DateTime.Now + "   Entered State: " + FSM.GetCurrentState() + "\n";
 
             using (StreamWriter logStream = File.AppendText(filePath))
             {
                 logStream.WriteLine(logEntry);
             }
-            
+
             _taskPage.AddLogEntry(logEntry);
         }
 
