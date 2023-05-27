@@ -29,7 +29,7 @@ namespace MECHENG_313_A2.Tasks
             _taskPage.SetTrafficLightState(TrafficLightState.Green);
 
 
-            //Setting all other states
+            //Setting the Finite State Table
             FSM.SetNextState("Green", "Yellow", "a");
             FSM.AddAction("Green", "a", MethodA);
             FSM.AddAction("Green", "a", MethodB);
@@ -70,15 +70,18 @@ namespace MECHENG_313_A2.Tasks
             FSM.AddAction("None", "a", MethodB);
             FSM.AddAction("None", "a", MethodC);
 
+            //Performing the inital timer tick
             TimerTick();
         }
 
         public void TimerTick()
         {
+            //Creating a timer object and initialising the interval to green (as we start in this state)
             timer = new Timer();
 
             timer.Interval = greenLength;
            
+            //Setting the other timer variables
             timer.Elapsed += Tick;
             timer.AutoReset = true;
             timer.Enabled = true;
@@ -87,7 +90,7 @@ namespace MECHENG_313_A2.Tasks
 
         public override void ConfigLightLength(int redLength, int greenLength)
         {
-
+            //Setting light lengths (Yellow can't be altered)
             this.redLength = redLength;
             this.greenLength = greenLength;
 
@@ -98,21 +101,21 @@ namespace MECHENG_313_A2.Tasks
             //Can only enter config mode is the current state is Red
             while (!String.Equals(FSM.GetCurrentState(), "Red"))
             {
-
                 
-                //Using ProcessEvent method to enter config mode. use of state variable is only since Process Event returns current 
             }
+            //Indicating that we're entering configMode but preventing this from happening until the Red light has finished
             configState = 1;
             while (String.Equals(FSM.GetCurrentState(), "Red"))
             {
 
             }
+            //Entering configMode
             return true;
         }
 
         public override void ExitConfigMode()
         {
-
+            //Indicating that we are no longer in configMode
             configState = 2;
 
         }
@@ -120,12 +123,13 @@ namespace MECHENG_313_A2.Tasks
 
         public void Tick(Object source, ElapsedEventArgs e)
         {
+            //If we are entering config mode change the timer interval and process event trigger b
             if (configState == 1)
             {
                 timer.Interval = configLength;
                 FSM.ProcessEvent("b");
                 configState = 0;
-            }
+            }//Exiting config mode
             else if (configState == 2)
             {
                 timer.Interval = redLength;
@@ -133,7 +137,7 @@ namespace MECHENG_313_A2.Tasks
                 configState = 0;
             }
             else
-            {
+            {//If we aren't entering or exiting config mode process a normal tick event
                 state = FSM.ProcessEvent("a");
 
                 if (state == "Green")
@@ -154,8 +158,6 @@ namespace MECHENG_313_A2.Tasks
                 }
             }
           
-
-
 
         }
     }

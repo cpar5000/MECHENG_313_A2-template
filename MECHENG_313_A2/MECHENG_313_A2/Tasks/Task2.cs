@@ -23,6 +23,7 @@ namespace MECHENG_313_A2.Tasks
         public virtual TaskNumber TaskNumber => TaskNumber.Task2;
         protected Boolean configMode = false;
 
+        //Light_length variable are used for Task 3
         protected static int DEFAULT_GREEN_LIGHT_LENGTH = 1000;
         protected static int DEFAULT_YELLOW_LIGHT_LENGTH = 1000;
         protected static int DEFAULT_RED_LIGHT_LENGTH = 1000;
@@ -37,7 +38,7 @@ namespace MECHENG_313_A2.Tasks
 
         virtual public void ConfigLightLength(int redLength, int greenLength)
         {
-
+            //No Implementation needed in task 2 as ConfigLightLength is overwritten in Task 3
 
         }
 
@@ -46,7 +47,7 @@ namespace MECHENG_313_A2.Tasks
             //Can only enter config mode is the current state is Red
             if (String.Equals(FSM.GetCurrentState(), "Red"))
             {
-                //Using ProcessEvent method to enter config mode. use of state variable is only since Process Event returns current state
+                //Using ProcessEvent method to enter config mode. Use of state variable keeps Task 2's current state up to date.
                 state = FSM.ProcessEvent("b");
 
                 configMode = true;
@@ -57,7 +58,7 @@ namespace MECHENG_313_A2.Tasks
 
         virtual public void ExitConfigMode()
         {
-            //Using ProcessEvent method to exit config mode. use of state variable is only since Process Event returns current state
+            //Using ProcessEvent method to exit config mode. Use of state variable keeps Task 2's current state up to date.
             state = FSM.ProcessEvent("b");
             configMode = false;
         }
@@ -70,14 +71,17 @@ namespace MECHENG_313_A2.Tasks
 
         public async Task<string> OpenLogFile()
         {
+            //Setting the filepath to the relevant "log.txt" file
             string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "log.txt");
 
+            //We must create a "log.txt" file if one does not exist yer
             if (!File.Exists(filePath))
             {
                 File.Create(filePath);
             }
             else
             {
+                //Otherwise print the "log.txt" file to the GUI in the right orientation
                 string[] lines = File.ReadAllLines(filePath);
                 Array.Reverse(lines);
                 _taskPage.SetLogEntries(lines);
@@ -98,6 +102,7 @@ namespace MECHENG_313_A2.Tasks
 
         public async Task<bool> OpenPort(string serialPort, int baudRate)
         {
+            //Opening the serial port and returning whether or not it successfully opens
             bool open = await serialInterface.OpenPort(serialPort, baudRate).ConfigureAwait(false);
             if (open)
             {
@@ -168,8 +173,8 @@ namespace MECHENG_313_A2.Tasks
 
         public virtual void Tick()
         {
+            //Running the ProcessEvent Method
             state = FSM.ProcessEvent("a");
-
         }
 
         public async void MethodA(DateTime timestamp, string eventTrigger)
@@ -181,10 +186,10 @@ namespace MECHENG_313_A2.Tasks
                 temp = "Yellow";
             }
 
-            //Checking that the currentState is valid
+            //Checking that the currentState is valid compared to the TrafficLightState enumerated variable (It should always be)
             if (Enum.TryParse<TrafficLightState>(temp, out displayState))
             {
-                //Sending the serial command to change the Traffic light state and then printing to the gui
+                //Sending the serial command to change the Traffic light state and then printing to the GUI
                 string response = await serialInterface.SetState((TrafficLightState)Enum.Parse(typeof(TrafficLightState), temp, true));
                 _taskPage.SerialPrint(timestamp, response + "\n");
             }
@@ -193,6 +198,7 @@ namespace MECHENG_313_A2.Tasks
         public async void MethodB(DateTime timestamp, string eventTrigger)
         {
             string eventTriggered;
+            //Renaming event trigger a to "Tick" and event trigger b to "Entered/Exited Config Mode" depending on whethere we're in configMode currently
             if (eventTrigger == "a")
             {
                 eventTriggered = "Tick";
@@ -204,6 +210,7 @@ namespace MECHENG_313_A2.Tasks
                 eventTriggered = "Exited Config Mode";
             }
 
+            //Logging the Event Trigger and which state we enter
             string logEntry = timestamp + "\tEvent Triggered: " + eventTriggered + "\n";
             logger(logEntry);
 
@@ -214,23 +221,28 @@ namespace MECHENG_313_A2.Tasks
         public async void MethodC(DateTime timestamp, string eventTrigger)
         {
             string temp = FSM.GetCurrentState();
+            //Since Yellow' is the Yellow in config state the string must be simplified to "Yellow"
             if (temp == "Yellow'")
             {
                 temp = "Yellow";
             }
 
+            //Logging the beginning of the GUI light update
             string logEntry = timestamp + "\tAction Started: Update GUI Light: Updating the GUI Traffic Light to " + temp + "\n";
             logger(logEntry);
 
+            //Changing the Traffic Light State on the GUI
             if (Enum.TryParse<TrafficLightState>(temp, out displayState))
             {
                 _taskPage.SetTrafficLightState((TrafficLightState)Enum.Parse(typeof(TrafficLightState), temp, true));
             }
 
+            //Logging the completion of the GUI light update
             logEntry = timestamp + "\tAction Started: Updated GUI Light: The GUI Traffic Light is now " + FSM.GetCurrentState() + "\n";
             logger(logEntry);
         }
 
+        //logger function used to log string to the "log.txt" file using lock as it is called from multiple threads and this prevents multiple calls attempting to access the file at the same time
         public void logger(string logEntry)
         {
             string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "log.txt");
