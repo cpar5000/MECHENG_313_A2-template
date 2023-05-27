@@ -7,23 +7,21 @@ using System.Threading.Tasks;
 
 namespace MECHENG_313_A2.Tasks
 {
-
-    //public delegate int DelFoo(int a, int b);
-
     public class FiniteStateMachine : IFiniteStateMachine
     {
-
+        //Info struct is used to store the next state and the actions associated with a state transition as a value in the nested dictionary Finite State Table
         public struct Info {
             public string nextState;
             public List<TimestampedAction> actions;
         }
 
+        //Defining the Finite State Table using nested dictionaries
         public Dictionary<string, Dictionary<string, Info>> fst = new Dictionary<string, Dictionary<string, Info>>();
         private string currentState;
 
         public void AddAction(string state, string eventTrigger, TimestampedAction action)
         {
-
+            //The Info struct stored at the key values in the Finite State Table must be copied, edited then overwritten in order to update the struct
             Info a = fst[state][eventTrigger];
             Info b;
             b = a;
@@ -33,22 +31,15 @@ namespace MECHENG_313_A2.Tasks
         }
 
         public string GetCurrentState()
-
         {
             return currentState;
         }
 
         public string ProcessEvent(string eventTrigger)
         {
-            //DelFoo foo = (a, b) => { return a + b; };
-            //foo(1, 2);
-
-            //DateTime time = DateTime.Now;
-
-
+            //Finding the relevant Info Struct given key values of currentState and eventTrigger
             if (fst.ContainsKey(currentState) && fst[currentState].ContainsKey(eventTrigger))
             {
-                TimestampedAction temp;
                 Info info = fst[currentState][eventTrigger];
                 SetCurrentState(info.nextState);
 

@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Xamarin.Forms;
+using System.Net;
+using System.Linq;
 
 namespace MECHENG_313_A2.Tasks
 {
@@ -17,8 +19,8 @@ namespace MECHENG_313_A2.Tasks
         protected FiniteStateMachine FSM = new FiniteStateMachine();
         protected MockSerialInterface serialInterface = new MockSerialInterface();
         TrafficLightState displayState = new TrafficLightState();
+        protected object lockObject = new object();
         public virtual TaskNumber TaskNumber => TaskNumber.Task2;
-        protected static string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "log.txt");
         protected Boolean configMode = false;
 
         protected static int DEFAULT_GREEN_LIGHT_LENGTH = 1000;
@@ -47,6 +49,7 @@ namespace MECHENG_313_A2.Tasks
                 //Using ProcessEvent method to enter config mode. use of state variable is only since Process Event returns current state
                 state = FSM.ProcessEvent("b");
 
+                configMode = true;
                 return true;
             }
             return false;
@@ -56,7 +59,7 @@ namespace MECHENG_313_A2.Tasks
         {
             //Using ProcessEvent method to exit config mode. use of state variable is only since Process Event returns current state
             state = FSM.ProcessEvent("b");
-
+            configMode = false;
         }
 
         public async Task<string[]> GetPortNames()
@@ -67,6 +70,8 @@ namespace MECHENG_313_A2.Tasks
 
         public async Task<string> OpenLogFile()
         {
+            string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "log.txt");
+
             if (!File.Exists(filePath))
             {
                 File.Create(filePath);
@@ -74,6 +79,7 @@ namespace MECHENG_313_A2.Tasks
             else
             {
                 string[] lines = File.ReadAllLines(filePath);
+                Array.Reverse(lines);
                 _taskPage.SetLogEntries(lines);
             }
 
@@ -107,14 +113,18 @@ namespace MECHENG_313_A2.Tasks
 
        
 
-        public virtual void Start()
+        public async virtual void Start()
         {
             //Setting the initial Green state
-            state = "Red";
+            state = "Green";
             FSM.SetCurrentState(state);
+            MethodA(DateTime.Now, "a");
+            string logEntry = DateTime.Now + "\t" + "Event Triggered:\tStart\n";
+            logger(logEntry);
+            _taskPage.SetTrafficLightState(TrafficLightState.Green);
 
 
-            //Setting all other states
+            //Setting the Finite State Table
             FSM.SetNextState("Green", "Yellow", "a");
             FSM.AddAction("Green", "a", MethodA);
             FSM.AddAction("Green", "a", MethodB);
@@ -154,9 +164,6 @@ namespace MECHENG_313_A2.Tasks
             FSM.AddAction("None", "a", MethodA);
             FSM.AddAction("None", "a", MethodB);
             FSM.AddAction("None", "a", MethodC);
-
-            //Setup
-            FSM.ProcessEvent("a");
         }
 
         public virtual void Tick()
@@ -165,20 +172,25 @@ namespace MECHENG_313_A2.Tasks
 
         }
 
-        public void MethodA(DateTime timestamp, string eventTrigger)
+        public async void MethodA(DateTime timestamp, string eventTrigger)
         {
             string temp = FSM.GetCurrentState();
+            //Since Yellow' is the Yellow in config state the string must be simplified to "Yellow"
             if (temp == "Yellow'")
             {
                 temp = "Yellow";
             }
+
+            //Checking that the currentState is valid
             if (Enum.TryParse<TrafficLightState>(temp, out displayState))
             {
-                _taskPage.SetTrafficLightState((TrafficLightState)Enum.Parse(typeof(TrafficLightState), temp, true));
+                //Sending the serial command to change the Traffic light state and then printing to the gui
+                string response = await serialInterface.SetState((TrafficLightState)Enum.Parse(typeof(TrafficLightState), temp, true));
+                _taskPage.SerialPrint(timestamp, response + "\n");
             }
         }
 
-        public void MethodB(DateTime timestamp, string eventTrigger)
+        public async void MethodB(DateTime timestamp, string eventTrigger)
         {
             string eventTriggered;
             if (eventTrigger == "a")
@@ -191,17 +203,15 @@ namespace MECHENG_313_A2.Tasks
             {
                 eventTriggered = "Exited Config Mode";
             }
-            string logEntry = DateTime.Now + "   Event Triggered: " + eventTriggered + "\n" + DateTime.Now + "   Entered State: " + FSM.GetCurrentState() + "\n";
 
-            using (StreamWriter logStream = File.AppendText(filePath))
-            {
-                logStream.WriteLine(logEntry);
-            }
+            string logEntry = timestamp + "\tEvent Triggered: " + eventTriggered + "\n";
+            logger(logEntry);
 
-            _taskPage.AddLogEntry(logEntry);
+            logEntry = timestamp + "\tEntered State: " + FSM.GetCurrentState() + "\n";
+            logger(logEntry);
         }
 
-        public void MethodC(DateTime timestamp, string eventTrigger)
+        public async void MethodC(DateTime timestamp, string eventTrigger)
         {
             string temp = FSM.GetCurrentState();
             if (temp == "Yellow'")
@@ -209,8 +219,26 @@ namespace MECHENG_313_A2.Tasks
                 temp = "Yellow";
             }
 
-            temp = temp + "\n";
-            _taskPage.SerialPrint(DateTime.Now, temp);
+            string logEntry = timestamp + "\tAction Started: Update GUI Light: Updating the GUI Traffic Light to " + temp + "\n";
+            logger(logEntry);
+
+            if (Enum.TryParse<TrafficLightState>(temp, out displayState))
+            {
+                _taskPage.SetTrafficLightState((TrafficLightState)Enum.Parse(typeof(TrafficLightState), temp, true));
+            }
+
+            logEntry = timestamp + "\tAction Started: Updated GUI Light: The GUI Traffic Light is now " + FSM.GetCurrentState() + "\n";
+            logger(logEntry);
+        }
+
+        public void logger(string logEntry)
+        {
+            string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "log.txt");
+            lock (lockObject) {
+                File.AppendAllText(filePath, logEntry);
+                _taskPage.AddLogEntry(logEntry);
+            }
+
         }
     }
 }

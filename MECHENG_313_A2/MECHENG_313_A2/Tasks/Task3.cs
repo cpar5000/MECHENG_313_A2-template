@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 using System.Timers;
+using System.IO;
 
 namespace MECHENG_313_A2.Tasks
 {
@@ -20,8 +21,12 @@ namespace MECHENG_313_A2.Tasks
         public override void Start()
         {
             //Setting the initial Green state
-            state = "Red";
+            state = "Green";
             FSM.SetCurrentState(state);
+            MethodA(DateTime.Now, "a");
+            string logEntry = DateTime.Now + "\t" + "Event Triggered:\tStart";
+            logger(logEntry);
+            _taskPage.SetTrafficLightState(TrafficLightState.Green);
 
 
             //Setting all other states
@@ -65,11 +70,7 @@ namespace MECHENG_313_A2.Tasks
             FSM.AddAction("None", "a", MethodB);
             FSM.AddAction("None", "a", MethodC);
 
-            FSM.ProcessEvent("a");
-
             TimerTick();
-
-
         }
 
         public void TimerTick()
@@ -157,8 +158,5 @@ namespace MECHENG_313_A2.Tasks
 
 
         }
-
-
-        // TODO: Implement this
     }
 }
